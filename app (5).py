@@ -139,7 +139,7 @@ else:
                             pivot[f"% {col}"] = 0
 
                     pivot["% Visado+Auto"] = pivot.get("% VISA", 0) + pivot.get("% AUTO", 0)
-                    pivot["Cumple Meta"] = (pivot.get("% ATEN", 0) <= 15) & (pivot["% Visado+Auto"] >= 85)
+                    pivot["Cumple Meta"] = (pivot.get("% ATEN", 0) <= 15) & (pivot["% Visa+Auto"] >= 85)
                     pivot["Cumple Meta"] = pivot["Cumple Meta"].apply(lambda x: "✅" if x else "❌")
 
                     columnas_porcentaje = [c for c in pivot.columns if "%" in c]
