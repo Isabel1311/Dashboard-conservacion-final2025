@@ -193,10 +193,10 @@ else:
 
 
            with tabs[3]:
-                st.subheader("🎯 Evaluación de cumplimiento por estatus de Usuario")
-                try:
-                    if "ESTATUS DE USUARIO" in df_filtrado.columns and "ORDEN" in df_filtrado.columns and not df_filtrado.empty:
-                        estatus_col = "ESTATUS DE USUARIO"
+                st.subheader("🎯 Evaluación de cumplimiento por estatus de sistema")
+
+                    estatus_col = next((col for col in df_filtrado.columns if "ESTATUS" in col and "SISTEMA" in col), None)
+                    if estatus_col:
                         tabla_estatus = pd.pivot_table(
                             df_filtrado,
                             index="PROVEEDOR",
@@ -205,25 +205,22 @@ else:
                             aggfunc="count",
                             fill_value=0
                         )
-
+                
                         tabla_estatus["TOTAL"] = tabla_estatus.sum(axis=1)
-
+                
                         for col in ["ATEN", "VISADO", "AUTO"]:
                             if col in tabla_estatus.columns:
                                 tabla_estatus[f"% {col}"] = (tabla_estatus[col] / tabla_estatus["TOTAL"]) * 100
                             else:
                                 tabla_estatus[f"% {col}"] = 0
-
+                
                         tabla_estatus["% Visado+Auto"] = tabla_estatus["% VISADO"] + tabla_estatus["% AUTO"]
-                        tabla_estatus["Cumple Meta"] = (tabla_estatus["% ATEN"] <= 15) & (tabla_estatus["% Visado+Auto"] >= 85)
+                        tabla_estatus["Cumple Meta"] = (tabla_estatus["% ATEN"] <= 5) & (tabla_estatus["% Visado+Auto"] >= 90)
                         tabla_estatus["Cumple Meta"] = tabla_estatus["Cumple Meta"].apply(lambda x: "✅" if x else "❌")
-
+                
                         columnas_porcentaje = [c for c in tabla_estatus.columns if "%" in c]
                         tabla_estatus[columnas_porcentaje] = tabla_estatus[columnas_porcentaje].round(2)
-
+                
                         st.dataframe(tabla_estatus[[*columnas_porcentaje, "Cumple Meta"]])
                     else:
-                        st.warning("No se encontraron datos suficientes o las columnas necesarias no están disponibles.")
-                except Exception as e:
-                    st.error(f"Ocurrió un error al generar la tabla de metas: {e}")
-
+                        st.warning("No se encontró la columna 'ESTATUS DE SISTEMA' o está vacía.")
