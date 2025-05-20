@@ -191,8 +191,8 @@ else:
 
                 st.plotly_chart(fig_dia, use_container_width=True)
 
-           with tabs[3]:
-                st.subheader("🎯 Evaluación de cumplimiento por estatus de sistema")
+             with tabs[3]:
+                    st.subheader("🎯 Evaluación de cumplimiento por estatus de sistema")
 
                     estatus_col = next((col for col in df_filtrado.columns if "ESTATUS" in col and "SISTEMA" in col), None)
                     if estatus_col:
