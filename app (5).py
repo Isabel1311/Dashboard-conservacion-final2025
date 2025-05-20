@@ -132,13 +132,13 @@ else:
                     pivot = tabla_estatus.pivot(index="PROVEEDOR", columns="ESTATUS DE SISTEMA", values="FOLIOS").fillna(0)
                     pivot["TOTAL"] = pivot.sum(axis=1)
 
-                    for col in ["ATEN", "VISADO", "AUTO"]:
+                    for col in ["ATEN", "VISA", "AUTO"]:
                         if col in pivot.columns:
                             pivot[f"% {col}"] = (pivot[col] / pivot["TOTAL"]) * 100
                         else:
                             pivot[f"% {col}"] = 0
 
-                    pivot["% Visado+Auto"] = pivot.get("% VISADO", 0) + pivot.get("% AUTO", 0)
+                    pivot["% Visado+Auto"] = pivot.get("% VISA", 0) + pivot.get("% AUTO", 0)
                     pivot["Cumple Meta"] = (pivot.get("% ATEN", 0) <= 15) & (pivot["% Visado+Auto"] >= 85)
                     pivot["Cumple Meta"] = pivot["Cumple Meta"].apply(lambda x: "✅" if x else "❌")
 
