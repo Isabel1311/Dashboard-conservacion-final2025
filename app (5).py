@@ -112,14 +112,77 @@ else:
                 st.subheader("📈 Órdenes por Estatus")
                 grafico1 = df_filtrado["ESTATUS DE USUARIO"].value_counts().reset_index()
                 grafico1.columns = ["Estatus", "Cantidad"]
-                fig = px.bar(grafico1, x="Estatus", y="Cantidad", title="Órdenes por Estatus", color="Cantidad", text="Cantidad", labels={"Cantidad": "Cantidad de Órdenes"})
+                fig = px.bar(
+                    grafico1,
+                    x="Estatus",
+                    y="Cantidad",
+                    title="Órdenes por Estatus",
+                    color="Cantidad",
+                    text="Cantidad",
+                    labels={"Cantidad": "Cantidad de Órdenes"}
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
                 st.subheader("💸 Importe por Proveedor")
                 grafico2 = df_filtrado.groupby("PROVEEDOR")["IMPORTE"].sum().reset_index().sort_values(by="IMPORTE", ascending=False)
                 grafico2["IMPORTE"] = grafico2["IMPORTE"].round(2)
-                fig2 = px.bar(grafico2, x="PROVEEDOR", y="IMPORTE", title="Importe Total por Proveedor", text=grafico2["IMPORTE"].apply(lambda x: f"${x:,.0f}"), labels={"IMPORTE": "Importe ($MXN)"}, color="IMPORTE")
+                fig2 = px.bar(
+                    grafico2,
+                    x="PROVEEDOR",
+                    y="IMPORTE",
+                    title="Importe Total por Proveedor",
+                    text=grafico2["IMPORTE"].apply(lambda x: f"${x:,.0f}"),
+                    labels={"IMPORTE": "Importe ($MXN)"},
+                    color="IMPORTE"
+                )
                 st.plotly_chart(fig2, use_container_width=True)
+
+                st.subheader("📅 Tendencia de creación de órdenes por mes")
+                df_filtrado["MES"] = df_filtrado["FECHA DE CREACIÓN"].dt.month
+                df_filtrado["AÑO"] = df_filtrado["FECHA DE CREACIÓN"].dt.year
+                tendencia = df_filtrado.groupby(["AÑO", "MES"]).size().reset_index(name="FOLIOS")
+                fig3 = px.line(
+                    tendencia,
+                    x="MES",
+                    y="FOLIOS",
+                    color="AÑO",
+                    markers=True,
+                    title="Tendencia de creación de órdenes por mes",
+                    labels={"MES": "Mes", "FOLIOS": "Cantidad de Órdenes", "AÑO": "Año"}
+                )
+                fig3.update_traces(
+                    text=tendencia["FOLIOS"],
+                    textposition="top center",
+                    mode="lines+markers+text"
+                )
+                fig3.update_layout(xaxis=dict(tickmode="linear"))
+                st.plotly_chart(fig3, use_container_width=True)
+                
+                st.subheader("📆 Tendencia diaria de creación de órdenes")
+                df_filtrado["DIA"] = df_filtrado["FECHA DE CREACIÓN"].dt.date
+                tendencia_dia = df_filtrado.groupby("DIA").size().reset_index(name="FOLIOS")
+
+                fig_dia = px.line(
+                    tendencia_dia,
+                    x="DIA",
+                    y="FOLIOS",
+                    markers=True,
+                    title="Tendencia diaria de creación de órdenes",
+                    labels={"DIA": "Fecha", "FOLIOS": "Cantidad de Órdenes"}
+                )
+
+                fig_dia.update_traces(
+                    text=tendencia_dia["FOLIOS"],
+                    textposition="top center",
+                    mode="lines+markers+text"
+                )
+
+                fig_dia.update_layout(
+                    xaxis=dict(tickformat="%d-%b"),
+                    hovermode="x unified"
+                )
+
+                st.plotly_chart(fig_dia, use_container_width=True)
 
             with tabs[3]:
                 st.subheader("🎯 Evaluación de cumplimiento por estatus de sistema")
