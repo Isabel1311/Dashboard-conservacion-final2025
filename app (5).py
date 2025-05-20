@@ -122,8 +122,8 @@ else:
                 st.plotly_chart(fig2, use_container_width=True)
 
             with tabs[3]:
-                st.subheader("🎯 Evaluación de cumplimiento por estatus de sistema")
-                estatus_col = next((col for col in df_filtrado.columns if "ESTATUS" in col and "SISTEMA" in col), None)
+                st.subheader("🎯 Evaluación de cumplimiento por estatus de usuario")
+                estatus_col = next((col for col in df_filtrado.columns if "ESTATUS" in col and "USUARIO" in col), None)
                 if estatus_col:
                     tabla_estatus = pd.pivot_table(df_filtrado, index="PROVEEDOR", columns=estatus_col, values="ORDEN", aggfunc="count", fill_value=0)
                     tabla_estatus["TOTAL"] = tabla_estatus.sum(axis=1)
@@ -139,4 +139,4 @@ else:
                     tabla_estatus[columnas_porcentaje] = tabla_estatus[columnas_porcentaje].round(2)
                     st.dataframe(tabla_estatus[[*columnas_porcentaje, "Cumple Meta"]])
                 else:
-                    st.warning("No se encontró la columna 'ESTATUS DE SISTEMA' o está vacía.")
+                    st.warning("No se encontró la columna 'ESTATUS DE USUARIO' o está vacía.")
