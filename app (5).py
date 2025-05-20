@@ -191,7 +191,6 @@ else:
 
                 st.plotly_chart(fig_dia, use_container_width=True)
 
-
            with tabs[3]:
                 st.subheader("🎯 Evaluación de cumplimiento por estatus de sistema")
 
