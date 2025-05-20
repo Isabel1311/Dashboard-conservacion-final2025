@@ -104,13 +104,6 @@ else:
                 tabla_importes = pd.concat([tabla_importes, fila_importe]).round(2)
                 st.dataframe(tabla_importes.style.format("${:,.0f}").apply(lambda x: ["background-color: #dbeafe; font-weight: bold" if x.name == "TOTAL GENERAL" else "" for _ in x], axis=1))
 
-                buffer = BytesIO()
-                with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                    tabla_ordenes.to_excel(writer, sheet_name="Recuento Ordenes")
-                    tabla_importes.to_excel(writer, sheet_name="Importes Totales")
-                    df_filtrado.to_excel(writer, sheet_name="Detalle", index=False)
-                st.download_button("📤 Descargar reporte en Excel", data=buffer.getvalue(), file_name="reporte_mantenimiento_2025.xlsx", mime="application/vnd.ms-excel")
-
             with tabs[1]:
                 st.subheader("📋 Detalle completo de Órdenes")
                 st.dataframe(df_filtrado)
@@ -119,107 +112,31 @@ else:
                 st.subheader("📈 Órdenes por Estatus")
                 grafico1 = df_filtrado["ESTATUS DE USUARIO"].value_counts().reset_index()
                 grafico1.columns = ["Estatus", "Cantidad"]
-                fig = px.bar(
-                    grafico1,
-                    x="Estatus",
-                    y="Cantidad",
-                    title="Órdenes por Estatus",
-                    color="Cantidad",
-                    text="Cantidad",
-                    labels={"Cantidad": "Cantidad de Órdenes"}
-                )
+                fig = px.bar(grafico1, x="Estatus", y="Cantidad", title="Órdenes por Estatus", color="Cantidad", text="Cantidad", labels={"Cantidad": "Cantidad de Órdenes"})
                 st.plotly_chart(fig, use_container_width=True)
 
                 st.subheader("💸 Importe por Proveedor")
                 grafico2 = df_filtrado.groupby("PROVEEDOR")["IMPORTE"].sum().reset_index().sort_values(by="IMPORTE", ascending=False)
                 grafico2["IMPORTE"] = grafico2["IMPORTE"].round(2)
-                fig2 = px.bar(
-                    grafico2,
-                    x="PROVEEDOR",
-                    y="IMPORTE",
-                    title="Importe Total por Proveedor",
-                    text=grafico2["IMPORTE"].apply(lambda x: f"${x:,.0f}"),
-                    labels={"IMPORTE": "Importe ($MXN)"},
-                    color="IMPORTE"
-                )
+                fig2 = px.bar(grafico2, x="PROVEEDOR", y="IMPORTE", title="Importe Total por Proveedor", text=grafico2["IMPORTE"].apply(lambda x: f"${x:,.0f}"), labels={"IMPORTE": "Importe ($MXN)"}, color="IMPORTE")
                 st.plotly_chart(fig2, use_container_width=True)
 
-                st.subheader("📅 Tendencia de creación de órdenes por mes")
-                df_filtrado["MES"] = df_filtrado["FECHA DE CREACIÓN"].dt.month
-                df_filtrado["AÑO"] = df_filtrado["FECHA DE CREACIÓN"].dt.year
-                tendencia = df_filtrado.groupby(["AÑO", "MES"]).size().reset_index(name="FOLIOS")
-                fig3 = px.line(
-                    tendencia,
-                    x="MES",
-                    y="FOLIOS",
-                    color="AÑO",
-                    markers=True,
-                    title="Tendencia de creación de órdenes por mes",
-                    labels={"MES": "Mes", "FOLIOS": "Cantidad de Órdenes", "AÑO": "Año"}
-                )
-                fig3.update_traces(
-                    text=tendencia["FOLIOS"],
-                    textposition="top center",
-                    mode="lines+markers+text"
-                )
-                fig3.update_layout(xaxis=dict(tickmode="linear"))
-                st.plotly_chart(fig3, use_container_width=True)
-                
-                st.subheader("📆 Tendencia diaria de creación de órdenes")
-                df_filtrado["DIA"] = df_filtrado["FECHA DE CREACIÓN"].dt.date
-                tendencia_dia = df_filtrado.groupby("DIA").size().reset_index(name="FOLIOS")
-
-                fig_dia = px.line(
-                    tendencia_dia,
-                    x="DIA",
-                    y="FOLIOS",
-                    markers=True,
-                    title="Tendencia diaria de creación de órdenes",
-                    labels={"DIA": "Fecha", "FOLIOS": "Cantidad de Órdenes"}
-                )
-
-                fig_dia.update_traces(
-                    text=tendencia_dia["FOLIOS"],
-                    textposition="top center",
-                    mode="lines+markers+text"
-                )
-
-                fig_dia.update_layout(
-                    xaxis=dict(tickformat="%d-%b"),
-                    hovermode="x unified"
-                )
-
-                st.plotly_chart(fig_dia, use_container_width=True)
-
-             with tabs[3]:
-                    st.subheader("🎯 Evaluación de cumplimiento por estatus de sistema")
-
-                    estatus_col = next((col for col in df_filtrado.columns if "ESTATUS" in col and "SISTEMA" in col), None)
-                    if estatus_col:
-                        tabla_estatus = pd.pivot_table(
-                            df_filtrado,
-                            index="PROVEEDOR",
-                            columns=estatus_col,
-                            values="ORDEN",
-                            aggfunc="count",
-                            fill_value=0
-                        )
-                
-                        tabla_estatus["TOTAL"] = tabla_estatus.sum(axis=1)
-                
-                        for col in ["ATEN", "VISADO", "AUTO"]:
-                            if col in tabla_estatus.columns:
-                                tabla_estatus[f"% {col}"] = (tabla_estatus[col] / tabla_estatus["TOTAL"]) * 100
-                            else:
-                                tabla_estatus[f"% {col}"] = 0
-                
-                        tabla_estatus["% Visado+Auto"] = tabla_estatus["% VISADO"] + tabla_estatus["% AUTO"]
-                        tabla_estatus["Cumple Meta"] = (tabla_estatus["% ATEN"] <= 5) & (tabla_estatus["% Visado+Auto"] >= 90)
-                        tabla_estatus["Cumple Meta"] = tabla_estatus["Cumple Meta"].apply(lambda x: "✅" if x else "❌")
-                
-                        columnas_porcentaje = [c for c in tabla_estatus.columns if "%" in c]
-                        tabla_estatus[columnas_porcentaje] = tabla_estatus[columnas_porcentaje].round(2)
-                
-                        st.dataframe(tabla_estatus[[*columnas_porcentaje, "Cumple Meta"]])
-                    else:
-                        st.warning("No se encontró la columna 'ESTATUS DE SISTEMA' o está vacía.")
+            with tabs[3]:
+                st.subheader("🎯 Evaluación de cumplimiento por estatus de sistema")
+                estatus_col = next((col for col in df_filtrado.columns if "ESTATUS" in col and "SISTEMA" in col), None)
+                if estatus_col:
+                    tabla_estatus = pd.pivot_table(df_filtrado, index="PROVEEDOR", columns=estatus_col, values="ORDEN", aggfunc="count", fill_value=0)
+                    tabla_estatus["TOTAL"] = tabla_estatus.sum(axis=1)
+                    for col in ["ATEN", "VISADO", "AUTO"]:
+                        if col in tabla_estatus.columns:
+                            tabla_estatus[f"% {col}"] = (tabla_estatus[col] / tabla_estatus["TOTAL"]) * 100
+                        else:
+                            tabla_estatus[f"% {col}"] = 0
+                    tabla_estatus["% Visado+Auto"] = tabla_estatus["% VISADO"] + tabla_estatus["% AUTO"]
+                    tabla_estatus["Cumple Meta"] = (tabla_estatus["% ATEN"] <= 5) & (tabla_estatus["% Visado+Auto"] >= 90)
+                    tabla_estatus["Cumple Meta"] = tabla_estatus["Cumple Meta"].apply(lambda x: "✅" if x else "❌")
+                    columnas_porcentaje = [c for c in tabla_estatus.columns if "%" in c]
+                    tabla_estatus[columnas_porcentaje] = tabla_estatus[columnas_porcentaje].round(2)
+                    st.dataframe(tabla_estatus[[*columnas_porcentaje, "Cumple Meta"]])
+                else:
+                    st.warning("No se encontró la columna 'ESTATUS DE SISTEMA' o está vacía.")
